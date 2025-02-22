@@ -16,14 +16,18 @@ config = {
     "password": "mysql_Jarvis8002",
 }
 
+cursor = database.cursor()
 database.autocommit = True
 
 def enter_gymdb(id, timeIn) -> None:
     query = f"INSERT INTO gymeRHbot.users(ID, Time_in, Time_out)VALUES({id},'{timeIn}',DEFAULT);"
+    query2 = f"INSERT INTO gymeRHbot.history(ID, Time_in, Time_out)VALUES({id},'{timeIn}',DEFAULT);"
     cursor.execute(query)
+    cursor.execute(query2)
 
 def exit_gymdb(id, timeOut) -> None:
     query = f"UPDATE gymeRHbot.users SET Time_out = '{timeOut}' WHERE id = {id};"
+    query2 = f"UPDATE gymeRHbot.history SET Time_out = '{timeOut}' WHERE id = {id};"
     cursor.execute(query)
 
 def check_capacitydb() -> json:
@@ -32,9 +36,16 @@ def check_capacitydb() -> json:
     output = cursor.fetchall()
     return output
 
-cursor = database.cursor()
+def check_historydb() -> json:
+    query = f"SELECT JSON_OBJECT ('"'ID'"', id, '"'Time in'"', Time_in, '"'Time out'"', Time_out)FROM gymeRHbot.history"
+    cursor.execute(query)
+    output = cursor.fetchall()
+    return output
 
-#cursor.execute("SELECT * FROM gymeRHbot.users")
-ans = check_capacitydb()
-for user in ans:
-    print(ans)
+def test(i, timeIn) -> json:
+    query = f"INSERT INTO gymeRHbot.users(ID, Time_in, Time_out)VALUES({i},'{timeIn}',DEFAULT);"
+    cursor.execute(query)
+    query2 = f"SELECT JSON_OBJECT ('"'ID'"', id, '"'Time in'"', Time_in, '"'Time out'"', Time_out)FROM gymeRHbot.history"
+    cursor.execute(query2)
+    output = cursor.fetchall()
+    return output
