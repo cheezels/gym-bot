@@ -2,8 +2,8 @@ import logging
 import asyncio
 import threading
 from datetime import datetime, time
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, MessageHandler, filters, CommandHandler, CallbackContext, ConversationHandler
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, MessageHandler, filters, CommandHandler, CallbackContext, ConversationHandler, CallbackQueryHandler
 
 # Enable logging
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +19,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     """Handles the /start command and shows a menu."""
     keyboard = [
         ["/enter", "/exit"],
-        ["/capacity"]
+        ["/capacity", "/notify"],
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -49,42 +49,62 @@ async def check_capacity(update: Update, context: CallbackContext) -> None:
     number = len(gym_users)
     await update.message.reply_text(f"Current gym occupancy: {number} ")
 
-# Dictionary to store user inputs temporarily
-user_data = {}
+async def query_alert(update: Update, context: CallbackContext) -> None:
+    # Check if the update comes from a message or a callback query
+    if update.message:
+        chat_id = update.message.chat_id
+        reply_method = update.message.reply_text
+    elif update.callback_query:
+        chat_id = update.callback_query.message.chat_id
+        reply_method = update.callback_query.message.reply_text
+    else:
+        logger.error("Invalid update type in query_alert")
+        return
+    
+    await reply_method("Choose a duration to set an alert, we will check the gym capacity for you")
+    keyboard = [
+        [InlineKeyboardButton("10 sec", callback_data="10")], #test notif
+        [InlineKeyboardButton("15 min", callback_data="900")],  # 900 sec = 15 min
+        [InlineKeyboardButton("30 min", callback_data="1800")],  # 1800 sec = 30 min
+        [InlineKeyboardButton("45 min", callback_data="2700")],  # 2700 sec = 45 min
+        [InlineKeyboardButton("1 hour", callback_data="3600")],  # 3600 sec = 1 hour
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await reply_method("Set an alert for:", reply_markup=reply_markup)
 
 async def set_alert(update: Update, context: CallbackContext):
-    args = context.args
-    if len(args) != 2:
-        await update.message.reply_text("Usage: /setalert <capacity> <HH:MM>")
+    """Handle button clicks and set a timer."""
+    query = update.callback_query
+    await query.answer()
+
+    # Check if the user wants to set another alert
+    if query.data == "set_again":
+        # Re-prompt the user to choose a duration
+        await query_alert(update, context)
+        return
+    elif query.data == "no_repeat":
+        # End the conversation
+        await query.edit_message_text(text="No further alerts will be set.")
         return
 
-    user_id = update.message.chat_id
-    capacity_threshold = int(args[0])
-    alert_time = datetime.strptime(args[1], "%H:%M").time()
+    duration = int(query.data)  # Get the duration in seconds
+    user_id = query.message.chat_id
+    
+    await query.edit_message_text(text=f"Alert set! I will notify you in {duration // 60} minutes.")
 
-    # Calculate the delay (time until the alert should run)
-    now = datetime.now().time()
-    alert_datetime = datetime.combine(datetime.today(), alert_time)
-
-    if alert_time < now:
-        await update.message.reply_text("Please input a future time.")
-        return
-
-    # Calculate delay for threading
-    delay = (alert_datetime - datetime.now()).total_seconds()
-
-    await update.message.reply_text(
-        f"✅ Alert set: I'll notify you at {alert_time} minutes if gym capacity is below {capacity_threshold}.")
-
-    # Schedule notification
-    threading.Timer(delay, send_notification, args=(context.bot, user_id, capacity_threshold)).start()
-
-def send_notification(bot, user_id, capacity):
-    if len(gym_users) < capacity:
-        bot.send_message(user_id, f"⏰ Good news! The capacity is now below {capacity}.")
-    else:
-        bot.send_message(user_id, f"⏰ Bad news! Capacity is still at {len(gym_users)}.")
-
+    # Wait asynchronously and send notification
+    await asyncio.sleep(duration)
+    curr_capacity = 50
+    await context.bot.send_message(user_id, f"Time's up! Gym is currently at {curr_capacity}% capacity.")
+    
+    # Ask if the user wants to set another reminder
+    keyboard = [
+        [InlineKeyboardButton("🔁 Yes", callback_data="set_again")],
+        [InlineKeyboardButton("❌ No", callback_data="no_repeat")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await context.bot.send_message(user_id, "Would you like to set another alert", reply_markup=reply_markup)
 
 def main():
     app = Application.builder().token(TOKEN).build()
@@ -93,7 +113,8 @@ def main():
     app.add_handler(CommandHandler("enter", enter_gym))
     app.add_handler(CommandHandler("exit", exit_gym))
     app.add_handler(CommandHandler("capacity", check_capacity))
-    app.add_handler(CommandHandler("setalert", set_alert))
+    app.add_handler(CommandHandler("notify", query_alert))
+    app.add_handler(CallbackQueryHandler(set_alert))
 
     app.run_polling()
 
