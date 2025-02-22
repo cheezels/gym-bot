@@ -11,12 +11,10 @@ async def start(update: Update, context: CallbackContext) -> None:
 def main():
     app = Application.builder().token(TOKEN).build()
 
-    # Add command handlers
     app.add_handler(CommandHandler("start", start))
 
     print("Bot is running...")
 
-    # Start polling for updates
     app.run_polling()
 
 if __name__ == "__main__":
