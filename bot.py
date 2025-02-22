@@ -1,4 +1,5 @@
 import logging
+import datatest
 import asyncio
 import threading
 from datetime import datetime, time
@@ -35,18 +36,23 @@ async def enter_gym(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("You are already in the gym!")
     else:
         gym_users.add(user_id)
+        sql_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        datatest.enter_gymdb(user_id, sql_datetime)
         await update.message.reply_text("You have entered the gym. Welcome!")
 
 async def exit_gym(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     if user_id in gym_users:
         gym_users.remove(user_id)
+        sql_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        datatest.exit_gymdb(user_id, sql_datetime)
         await update.message.reply_text("You have left the gym. Goodbye!")
     else:
         await update.message.reply_text("You have already left the gym.")
 
 async def check_capacity(update: Update, context: CallbackContext) -> None:
-    number = len(gym_users)
+    number = len(datatest.check_capacitydb())
+    
     await update.message.reply_text(f"Current gym occupancy: {number} ")
 
 async def query_alert(update: Update, context: CallbackContext) -> None:
