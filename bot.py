@@ -20,6 +20,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     keyboard = [
         ["/enter", "/exit"],
         ["/capacity", "/notify"],
+        ["/show_timings"]
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -87,6 +88,9 @@ async def set_alert(update: Update, context: CallbackContext):
         # End the conversation
         await query.edit_message_text(text="No further alerts will be set.")
         return
+    else:
+        await query_graph(update, context)
+
 
     duration = int(query.data)  # Get the duration in seconds
     user_id = query.message.chat_id
@@ -106,6 +110,12 @@ async def set_alert(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await context.bot.send_message(user_id, "Would you like to set another alert", reply_markup=reply_markup)
 
+async def show_graph(update: Update, context: CallbackContext) -> None:
+     image_path = "test.png"
+     day = "Wednesday" #change
+     await update.message.reply_text(f"Here is the gym capacity throughout the day on {day}, based on historical data.")
+     await update.message.reply_photo(image_path, caption=f"{day} gym capacity.")
+
 def main():
     app = Application.builder().token(TOKEN).build()
 
@@ -115,6 +125,7 @@ def main():
     app.add_handler(CommandHandler("capacity", check_capacity))
     app.add_handler(CommandHandler("notify", query_alert))
     app.add_handler(CallbackQueryHandler(set_alert))
+    app.add_handler(CommandHandler("show_timings", show_graph))
 
     app.run_polling()
 
