@@ -49,43 +49,41 @@ async def check_capacity(update: Update, context: CallbackContext) -> None:
     number = len(gym_users)
     await update.message.reply_text(f"Current gym occupancy: {number} ")
 
-CAPACITY = 0;
-DELAY = 1;
+# Dictionary to store user inputs temporarily
+user_data = {}
 
 async def set_alert(update: Update, context: CallbackContext):
-    """Start the conversation to set an alert."""
-    await update.message.reply_text("Enter the gym capacity threshold:")
-    return CAPACITY  # Move to next state
+    args = context.args
+    if len(args) != 2:
+        await update.message.reply_text("Usage: /setalert <capacity> <HH:MM>")
+        return
 
-async def get_capacity(update: Update, context: CallbackContext):
-    """Store the capacity and ask for delay time."""
-    context.user_data["capacity"] = update.message.text  # Store the input
-    await update.message.reply_text("Enter the delay time in minutes:")
-    return DELAY  # Move to next state
-
-async def get_delay(update: Update, context: CallbackContext):
-    """Store the delay time and schedule the notification."""
     user_id = update.message.chat_id
-    capacity = context.user_data["capacity"]
-    delay_minutes = int(update.message.text)  # Convert to int
-    delay_seconds = delay_minutes * 60  # Convert to seconds
+    capacity_threshold = int(args[0])
+    alert_time = datetime.strptime(args[1], "%H:%M").time()
 
-    # Confirm with user
-    await update.message.reply_text(f"✅ Alert set: I'll notify you in {delay_minutes} minutes if gym capacity is below {capacity}.")
+    # Calculate the delay (time until the alert should run)
+    now = datetime.now().time()
+    alert_datetime = datetime.combine(datetime.today(), alert_time)
+
+    if alert_time < now:
+        await update.message.reply_text("Please input a future time.")
+        return
+
+    # Calculate delay for threading
+    delay = (alert_datetime - datetime.now()).total_seconds()
+
+    await update.message.reply_text(
+        f"✅ Alert set: I'll notify you at {alert_time} minutes if gym capacity is below {capacity_threshold}.")
 
     # Schedule notification
-    threading.Timer(delay_seconds, send_notification, args=(context.bot, user_id, capacity)).start()
-
-    return ConversationHandler.END  # End conversation
+    threading.Timer(delay, send_notification, args=(context.bot, user_id, capacity_threshold)).start()
 
 def send_notification(bot, user_id, capacity):
-    """Send notification after the delay."""
-    bot.send_message(user_id, f"⏰ Gym capacity alert! The capacity is now below {capacity}.")
-
-async def cancel(update: Update, context: CallbackContext):
-    """Cancel the conversation."""
-    await update.message.reply_text("❌ Alert setup cancelled.")
-    return ConversationHandler.END
+    if len(gym_users) < capacity:
+        bot.send_message(user_id, f"⏰ Good news! The capacity is now below {capacity}.")
+    else:
+        bot.send_message(user_id, f"⏰ Bad news! Capacity is still at {len(gym_users)}.")
 
 
 def main():
@@ -96,17 +94,6 @@ def main():
     app.add_handler(CommandHandler("exit", exit_gym))
     app.add_handler(CommandHandler("capacity", check_capacity))
     app.add_handler(CommandHandler("setalert", set_alert))
-
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("setalert", set_alert)],
-        states={
-            CAPACITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_capacity)],
-            DELAY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_delay)],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-    )
-
-    app.add_handler(conv_handler)
 
     app.run_polling()
 
