@@ -5,9 +5,9 @@ import mysql.connector
 import json
 
 database = mysql.connector.connect(
-    host = 'LAPTOP-771PFLLJ',
+    host = 'localhost',
     user = 'root',
-    password = '',
+    password = 'password123!',
     database = 'gymeRHbot'
    )
 
@@ -42,8 +42,10 @@ def enter_gymdb(id, timeIn) -> bool:
 def exit_gymdb(id, timeOut) -> bool:
     update()
 
-    query = f"SELECT gymeRHbot.users SET Time_out = '{timeOut}' WHERE id = {id};"
+    query = f"UPDATE gymeRHbot.users SET Time_out = '{timeOut}' WHERE id = {id};"
     cursor.execute(query)
+    query2 = f"SELECT * FROM gymeRHbot.users WHERE id = {id};"
+    cursor.execute(query2)
     result = cursor.fetchone()
 
     # user not in jim
@@ -106,7 +108,7 @@ def update() -> None:
     for user in users:
         user_id = user[0]
         time_in = user[1]
-        time_in = datetime.strptime(time_in, "%Y-%m-%d %H:%M:%S")
+        #time_in = datetime.strftime(time_in, "%Y-%m-%d %H:%M:%S")
         timeout = time_in + timedelta(hours=3)
 
         if current_time > timeout:
@@ -131,3 +133,6 @@ def update() -> None:
             WHERE Time_out IS NOT NULL AND Time_out < NOW();
         """
     cursor.execute(query_remove_from_users)
+
+
+database.disconnect()

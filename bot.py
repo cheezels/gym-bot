@@ -10,7 +10,7 @@ from telegram.ext import Application, MessageHandler, filters, CommandHandler, C
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN = "7572198403:AAGUFWXK1zWxEhWUfEjVfFYvLWNezM7D2GA"
+TOKEN = "7602878718:AAHr763ncvrshWEBWG_WebRRwycWdpq-G1s"
 
 # Dictionary to track users in gym
 # gym_users = set()
