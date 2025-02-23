@@ -1,5 +1,7 @@
 import logging
+import os
 import datatest
+from graph import process_data, make_graph
 import asyncio
 import threading
 from datetime import datetime, time
@@ -10,7 +12,7 @@ from telegram.ext import Application, MessageHandler, filters, CommandHandler, C
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN = "7572198403:AAGUFWXK1zWxEhWUfEjVfFYvLWNezM7D2GA"
+TOKEN = "7602878718:AAHr763ncvrshWEBWG_WebRRwycWdpq-G1s"
 
 # Dictionary to track users in gym
 # gym_users = set()
@@ -22,6 +24,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     keyboard = [
         ["/enter", "/exit"],
         ["/capacity", "/notify"],
+        ["/show_trends"]
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -114,6 +117,16 @@ async def set_alert(update: Update, context: CallbackContext):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await context.bot.send_message(user_id, "Would you like to set another alert", reply_markup=reply_markup)
+
+async def show_graph(update: Update, context: CallbackContext) -> None:
+    input_dict = process_data("test_data.json")
+    make_graph(input_dict)
+
+    image_path = "test.png"
+    day =  datetime.now()
+    await update.message.reply_text(f"Here is the gym capacity throughout the day on {day}, based on historical data.")
+    await update.message.reply_photo(image_path, caption=f"{day} gym capacity.")
+    os.remove("test.png")
 
 
 def main():
