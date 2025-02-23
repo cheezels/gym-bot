@@ -29,7 +29,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
     await update.message.reply_text(
-        "Welcome to Gym Tracker Bot!\nChoose an option below:",
+        "Welcome to 💪Gym Tracker Bot💪!\nChoose an option below:",
         reply_markup=reply_markup
     )
 
@@ -39,9 +39,9 @@ async def enter_gym(update: Update, context: CallbackContext) -> None:
     sql_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     is_successful = datatest.enter_gymdb(user_id, sql_datetime)
     if is_successful:
-        await update.message.reply_text("You have entered the gym. Welcome!")
+        await update.message.reply_text("You have entered the gym. Welcome!🤗")
     else:
-        await update.message.reply_text("You are already in the gym!")
+        await update.message.reply_text("You are already in the gym!😡")
 
 
 async def exit_gym(update: Update, context: CallbackContext) -> None:
@@ -49,9 +49,9 @@ async def exit_gym(update: Update, context: CallbackContext) -> None:
     sql_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     is_successful = datatest.exit_gymdb(user_id, sql_datetime)
     if is_successful:
-        await update.message.reply_text("You have left the gym. Goodbye!")
+        await update.message.reply_text("You have left the gym. Goodbye!👋")
     else:
-        await update.message.reply_text("You have already left the gym.")
+        await update.message.reply_text("You have already left the gym.😡")
 
 
 async def check_capacity(update: Update, context: CallbackContext) -> None:
@@ -72,7 +72,7 @@ async def query_alert(update: Update, context: CallbackContext) -> None:
         logger.error("Invalid update type in query_alert")
         return
     
-    await reply_method("Choose a duration to set an alert, we will check the gym capacity for you")
+    await reply_method("Choose a duration to set an alert⏰, we will check the gym capacity for you")
     keyboard = [
         [InlineKeyboardButton("10 sec", callback_data="10")], #test notif
         [InlineKeyboardButton("15 min", callback_data="900")],  # 900 sec = 15 min
@@ -103,12 +103,12 @@ async def set_alert(update: Update, context: CallbackContext):
     duration = int(query.data)  # Get the duration in seconds
     user_id = query.message.chat_id
     
-    await query.edit_message_text(text=f"Alert set! I will notify you in {duration // 60} minutes.")
+    await query.edit_message_text(text=f"Alert set⏰! I will notify you in {duration // 60} minutes.")
 
     # Wait asynchronously and send notification
     await asyncio.sleep(duration)
-    curr_capacity = 50
-    await context.bot.send_message(user_id, f"Time's up! Gym is currently at {curr_capacity}% capacity.")
+    number = datatest.check_capacitydb() 
+    await context.bot.send_message(user_id, f"Time's up⏰! There are currently {number} people in the gym.")
     
     # Ask if the user wants to set another reminder
     keyboard = [
@@ -116,15 +116,15 @@ async def set_alert(update: Update, context: CallbackContext):
         [InlineKeyboardButton("❌ No", callback_data="no_repeat")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await context.bot.send_message(user_id, "Would you like to set another alert", reply_markup=reply_markup)
+    await context.bot.send_message(user_id, "Would you like to set another alert?", reply_markup=reply_markup)
 
 async def show_graph(update: Update, context: CallbackContext) -> None:
     input_dict = process_data("/Users/jarvis/Documents/database/gym-bot/test_data.json")
     make_graph(input_dict)
 
     image_path = "test.png"
-    day =  datetime.now()
-    await update.message.reply_text(f"Here is the gym capacity throughout the day on {day}, based on historical data.")
+    day =  datetime.now().strftime("%A")
+    await update.message.reply_text(f"Here is the gym capacity throughout the day on {day}, based on historical data📊.")
     await update.message.reply_photo(image_path, caption=f"{day} gym capacity.")
     os.remove("test.png")
 
