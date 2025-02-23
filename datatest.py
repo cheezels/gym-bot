@@ -6,7 +6,7 @@ import json
 
 database = mysql.connector.connect(
     host = 'localhost',
-    user = 'root',
+    user = 'user',
     password = 'password123!',
     database = 'gymeRHbot'
    )
@@ -133,6 +133,3 @@ def update() -> None:
             WHERE Time_out IS NOT NULL AND Time_out < NOW();
         """
     cursor.execute(query_remove_from_users)
-
-
-database.disconnect()
