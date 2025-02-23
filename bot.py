@@ -10,10 +10,11 @@ from telegram.ext import Application, MessageHandler, filters, CommandHandler, C
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN = "7602878718:AAHr763ncvrshWEBWG_WebRRwycWdpq-G1s"
+TOKEN = "7572198403:AAGUFWXK1zWxEhWUfEjVfFYvLWNezM7D2GA"
 
 # Dictionary to track users in gym
-gym_users = set()
+# gym_users = set()
+
 
 # Start command handler
 async def start(update: Update, context: CallbackContext) -> None:
@@ -32,28 +33,29 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 async def enter_gym(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
-    if user_id in gym_users:
-        await update.message.reply_text("You are already in the gym!")
-    else:
-        gym_users.add(user_id)
-        sql_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        datatest.enter_gymdb(user_id, sql_datetime)
+    sql_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    is_successful = datatest.enter_gymdb(user_id, sql_datetime)
+    if is_successful:
         await update.message.reply_text("You have entered the gym. Welcome!")
+    else:
+        await update.message.reply_text("You are already in the gym!")
+
 
 async def exit_gym(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
-    if user_id in gym_users:
-        gym_users.remove(user_id)
-        sql_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        datatest.exit_gymdb(user_id, sql_datetime)
+    sql_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    is_successful = datatest.exit_gymdb(user_id, sql_datetime)
+    if is_successful:
         await update.message.reply_text("You have left the gym. Goodbye!")
     else:
         await update.message.reply_text("You have already left the gym.")
 
+
 async def check_capacity(update: Update, context: CallbackContext) -> None:
-    number = len(datatest.check_capacitydb())
-    
+    datatest.update()
+    number = datatest.check_capacitydb()
     await update.message.reply_text(f"Current gym occupancy: {number} ")
+
 
 async def query_alert(update: Update, context: CallbackContext) -> None:
     # Check if the update comes from a message or a callback query
@@ -78,6 +80,7 @@ async def query_alert(update: Update, context: CallbackContext) -> None:
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     await reply_method("Set an alert for:", reply_markup=reply_markup)
+
 
 async def set_alert(update: Update, context: CallbackContext):
     """Handle button clicks and set a timer."""
@@ -112,6 +115,7 @@ async def set_alert(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await context.bot.send_message(user_id, "Would you like to set another alert", reply_markup=reply_markup)
 
+
 def main():
     app = Application.builder().token(TOKEN).build()
 
@@ -123,6 +127,7 @@ def main():
     app.add_handler(CallbackQueryHandler(set_alert))
 
     app.run_polling()
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
