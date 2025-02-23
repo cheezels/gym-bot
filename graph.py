@@ -104,7 +104,7 @@ def make_graph(time_slots_dict):
 
     #plt.show()
 
-test_path = "test_data.json"
+#test_path = "test_data.json"
 
-input_dict = process_data(test_path)
-make_graph(input_dict)
+#input_dict = process_data(test_path)
+#make_graph(input_dict)

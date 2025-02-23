@@ -119,7 +119,7 @@ async def set_alert(update: Update, context: CallbackContext):
     await context.bot.send_message(user_id, "Would you like to set another alert", reply_markup=reply_markup)
 
 async def show_graph(update: Update, context: CallbackContext) -> None:
-    input_dict = process_data("test_data.json")
+    input_dict = process_data("/Users/jarvis/Documents/database/gym-bot/test_data.json")
     make_graph(input_dict)
 
     image_path = "test.png"
@@ -137,6 +137,7 @@ def main():
     app.add_handler(CommandHandler("exit", exit_gym))
     app.add_handler(CommandHandler("capacity", check_capacity))
     app.add_handler(CommandHandler("notify", query_alert))
+    app.add_handler(CommandHandler("show_trends", show_graph))
     app.add_handler(CallbackQueryHandler(set_alert))
 
     app.run_polling()
