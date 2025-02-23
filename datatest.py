@@ -5,16 +5,16 @@ import mysql.connector
 import json
 
 database = mysql.connector.connect(
-    host = 'LAPTOP-771PFLLJ',
+    host = '0.0.0.0',
     user = 'root',
-    password = '',
+    password = 'password123!',
     database = 'gymeRHbot'
    )
 
 config = {
     "host": "0.0.0.0",
     "port": 3306,
-    "user": "root@gymeRHbot.com",
+    "user": "root@localhost.com",
     "password": "",
 }
 
